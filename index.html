@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>student buddy</title>
+
+  <link rel="manifest" href="manifest.json">
+
   <style>
-    
     body {
       font-family: 'Segoe UI', Roboto, sans-serif;
       background: #eef2f7;
@@ -14,7 +16,6 @@
       text-align: center;
     }
 
-    
     .bg-switch {
       background: white;
       max-width: 500px;
@@ -26,6 +27,7 @@
       justify-content: center;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
+
     .bg-btn {
       background: #c0d4ec;
       border: none;
@@ -35,6 +37,7 @@
       cursor: pointer;
       font-size: 14px;
     }
+
     .bg-btn:hover { background: #a8c1df; }
 
     .card {
@@ -64,9 +67,11 @@
       padding: 12px 18px;
       text-align: left;
     }
+
     .item:last-child { border-bottom: none; }
 
     .name { font-weight: bold; font-size: 18px; }
+
     .grade-badge {
       background: #f4b642;
       padding: 4px 14px;
@@ -88,6 +93,7 @@
       border-radius: 36px;
       padding: 18px;
     }
+
     input, select {
       width: 90%;
       padding: 12px 18px;
@@ -97,11 +103,13 @@
       background: white;
       font-size: 15px;
     }
+
     .row {
       display: flex;
       gap: 8px;
       margin-top: 10px;
     }
+
     button {
       background: #2a7faa;
       color: white;
@@ -112,29 +120,32 @@
       flex: 1;
       cursor: pointer;
     }
+
     .clear-btn { background: #98a9b9; }
-    .empty { padding: 30px; color: #6f7e8f; font-style: italic; }
+
+    .empty {
+      padding: 30px;
+      color: #6f7e8f;
+      font-style: italic;
+    }
   </style>
 </head>
+
 <body id="mainBody">
 
-  
   <div class="bg-switch">
     <button class="bg-btn" onclick="changeBg('#eef2f7')">☀️ light</button>
     <button class="bg-btn" onclick="changeBg('#d4ddee')">⛅ medium</button>
     <button class="bg-btn" onclick="changeBg('#1f2a36')">🌙 dark</button>
   </div>
 
-
   <div class="card">
     <h2>📋 student · barangay list</h2>
 
-    
     <div id="listContainer" class="student-list">
       <div class="empty">➕ no students yet</div>
     </div>
 
-   
     <div class="input-area">
       <input id="nameInput" placeholder="full name" maxlength="40">
       <select id="gradeSelect">
@@ -148,24 +159,20 @@
         <button id="clearBtn" class="clear-btn">🗑️ clear all</button>
       </div>
     </div>
+
     <p style="margin:16px 0 6px; font-size:14px;">✨ find study buddies · for students</p>
   </div>
 
   <script>
-    
     window.changeBg = function(color) {
       document.getElementById('mainBody').style.backgroundColor = color;
       localStorage.setItem('bgColorPref', color);
     };
-    
+
     const saved = localStorage.getItem('bgColorPref');
     if (saved) document.getElementById('mainBody').style.backgroundColor = saved;
 
-   
-    let students = JSON.parse(localStorage.getItem('buddyList')) || [
-      { id: Date.now()-3000, name: 'Alex Rivera', grade: 'G10', detail: 'zone 2, needs math' },
-      { id: Date.now()-1500, name: 'Jamie Cruz', grade: 'G12', detail: 'can help with science' }
-    ];
+    let students = JSON.parse(localStorage.getItem('buddyList')) || [];
 
     const listDiv = document.getElementById('listContainer');
     const nameInp = document.getElementById('nameInput');
@@ -177,43 +184,34 @@
         listDiv.innerHTML = '<div class="empty">➕ list empty — add a student</div>';
         return;
       }
+
       let html = '';
-      
-      [...students].sort((a,b) => b.id - a.id).forEach(s => {
-        
-        let safeName = (s.name || '').replace(/[&<>]/g, c => 
-          c=='&'?'&amp;':c=='<'?'&lt;':c=='>'?'&gt;':c);
-        let safeDetail = (s.detail || '—').replace(/[&<>]/g, c => 
-          c=='&'?'&amp;':c=='<'?'&lt;':c=='>'?'&gt;':c);
+      students.forEach(s => {
         html += `<div class="item">
-          <div><span class="name">${safeName}</span><br><span>${s.grade} · ${safeDetail}</span></div>
-          <div style="display:flex; align-items:center; gap:8px">
-            <span class="grade-badge">${s.grade}</span>
-            <button class="del-btn" onclick="delStudent(${s.id})">✕</button>
-          </div>
+          <div><span class="name">${s.name}</span><br><span>${s.grade} · ${s.detail}</span></div>
+          <button class="del-btn" onclick="delStudent(${s.id})">✕</button>
         </div>`;
       });
+
       listDiv.innerHTML = html;
     }
 
-    window.delStudent = function(id) {
+    function delStudent(id) {
       students = students.filter(s => s.id !== id);
       localStorage.setItem('buddyList', JSON.stringify(students));
       display();
-    };
+    }
 
     document.getElementById('addBtn').onclick = () => {
-      let nameVal = nameInp.value.trim();
-      if (!nameVal) {
-        alert('Please enter a name');
-        return;
-      }
+      if (!nameInp.value.trim()) return alert('Enter name');
+
       students.push({
         id: Date.now(),
-        name: nameVal,
+        name: nameInp.value,
         grade: gradeSel.value,
-        detail: detInp.value.trim() || '—'
+        detail: detInp.value || '—'
       });
+
       localStorage.setItem('buddyList', JSON.stringify(students));
       nameInp.value = '';
       detInp.value = '';
@@ -221,15 +219,24 @@
     };
 
     document.getElementById('clearBtn').onclick = () => {
-      if (students.length && confirm('Remove all students?')) {
+      if (confirm('Clear all?')) {
         students = [];
         localStorage.setItem('buddyList', JSON.stringify(students));
         display();
       }
     };
 
-    
     display();
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker registered:', reg.scope))
+          .catch(err => console.log('Service Worker failed:', err));
+      });
+    }
   </script>
+
 </body>
 </html>
